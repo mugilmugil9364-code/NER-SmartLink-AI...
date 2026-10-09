@@ -1,0 +1,1611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#082f49">
+
+<title>NER-SmartLink-AI | Disaster Intelligence Platform</title>
+
+<link rel="stylesheet"
+ href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+<style>
+:root {
+  --navy:#082f49;
+  --blue:#0369a1;
+  --light:#e0f2fe;
+  --bg:#f1f5f9;
+  --white:#ffffff;
+  --red:#dc2626;
+  --green:#15803d;
+  --amber:#b45309;
+  --text:#0f172a;
+  --muted:#64748b;
+}
+
+* {
+  box-sizing:border-box;
+}
+
+body {
+  margin:0;
+  font-family:Arial,sans-serif;
+  background:var(--bg);
+  color:var(--text);
+}
+
+header {
+  padding:22px 16px;
+  background:linear-gradient(135deg,var(--navy),var(--blue));
+  color:white;
+}
+
+header h1 {
+  margin:0 0 8px;
+  font-size:25px;
+}
+
+header p {
+  font-size:13px;
+  line-height:1.6;
+  margin:5px 0;
+}
+
+header .tag {
+  display:inline-block;
+  background:#dcfce7;
+  color:#166534;
+  padding:6px 10px;
+  border-radius:20px;
+  font-size:12px;
+  margin-top:8px;
+}
+
+nav {
+  display:flex;
+  gap:8px;
+  overflow-x:auto;
+  padding:10px;
+  background:#fff;
+  position:sticky;
+  top:0;
+  z-index:1000;
+  box-shadow:0 2px 5px #00000012;
+}
+
+nav a {
+  flex-shrink:0;
+  color:#075985;
+  background:#e0f2fe;
+  padding:9px 12px;
+  border-radius:9px;
+  text-decoration:none;
+  font-size:12px;
+}
+
+.container {
+  max-width:1100px;
+  padding:14px;
+  margin:auto;
+}
+
+.card {
+  background:#fff;
+  padding:16px;
+  border-radius:15px;
+  margin-bottom:15px;
+  box-shadow:0 2px 8px #0000000a;
+  scroll-margin-top:65px;
+}
+
+.card h2 {
+  font-size:18px;
+  margin:0 0 13px;
+}
+
+h3 {
+  font-size:15px;
+  margin-top:20px;
+}
+
+p {
+  line-height:1.6;
+}
+
+small,.muted {
+  color:var(--muted);
+}
+
+.stats {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+  margin-bottom:15px;
+}
+
+.stat {
+  background:white;
+  border-radius:13px;
+  padding:15px;
+  box-shadow:0 2px 7px #00000008;
+}
+
+.stat span {
+  font-size:12px;
+  color:var(--muted);
+}
+
+.stat strong {
+  display:block;
+  font-size:26px;
+  color:var(--blue);
+  margin-top:8px;
+  overflow-wrap:anywhere;
+}
+
+.grid {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+}
+
+button {
+  border:0;
+  border-radius:9px;
+  padding:12px 10px;
+  background:var(--blue);
+  color:white;
+  font-size:13px;
+  cursor:pointer;
+  margin-top:5px;
+  width:100%;
+}
+
+button:active {
+  opacity:.8;
+}
+
+button.secondary {
+  background:#e0f2fe;
+  color:#075985;
+}
+
+button.danger {
+  background:var(--red);
+}
+
+button.success {
+  background:var(--green);
+}
+
+button.warning {
+  background:#b45309;
+}
+
+input,select,textarea {
+  width:100%;
+  padding:12px;
+  margin:5px 0 12px;
+  border:1px solid #cbd5e1;
+  border-radius:9px;
+  font-size:14px;
+  background:white;
+}
+
+label {
+  font-size:13px;
+  font-weight:bold;
+}
+
+.result {
+  margin-top:12px;
+  padding:12px;
+  background:#f1f5f9;
+  border-radius:10px;
+  font-size:13px;
+  line-height:1.8;
+  overflow-wrap:anywhere;
+}
+
+#map {
+  width:100%;
+  height:350px;
+  border-radius:12px;
+  z-index:1;
+  background:#e2e8f0;
+}
+
+.badge {
+  display:inline-block;
+  padding:5px 9px;
+  border-radius:7px;
+  font-size:11px;
+  font-weight:bold;
+}
+
+.low {
+  background:#dcfce7;
+  color:#166534;
+}
+
+.medium {
+  background:#fef3c7;
+  color:#92400e;
+}
+
+.high {
+  background:#fee2e2;
+  color:#991b1b;
+}
+
+.item {
+  border:1px solid #e2e8f0;
+  padding:12px;
+  border-radius:10px;
+  margin:9px 0;
+  font-size:13px;
+  line-height:1.8;
+  overflow-wrap:anywhere;
+}
+
+.item button {
+  margin-top:8px;
+}
+
+.notice {
+  background:#fffbeb;
+  border-left:4px solid #f59e0b;
+  padding:10px;
+  font-size:12px;
+  line-height:1.7;
+  border-radius:5px;
+}
+
+footer {
+  text-align:center;
+  padding:22px;
+  font-size:12px;
+  color:var(--muted);
+}
+
+@media(min-width:700px) {
+  .stats {
+    grid-template-columns:repeat(4,minmax(0,1fr));
+  }
+
+  .grid {
+    grid-template-columns:repeat(3,minmax(0,1fr));
+  }
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>🌐 NER-SmartLink-AI</h1>
+  <p>AI-Based Smart Logistics and Accessibility Intelligence Platform for North Eastern Region</p>
+  <p>Disaster Intelligence • Smart Logistics • Emergency Response</p>
+  <span class="tag">● Frontend Application</span>
+</header>
+
+<nav>
+  <a href="#dashboard">Dashboard</a>
+  <a href="#mapSection">Satellite Map</a>
+  <a href="#weather">Weather</a>
+  <a href="#prediction">AI Risk</a>
+  <a href="#government">Government</a>
+  <a href="#dispatch">Dispatch</a>
+  <a href="#reports">Reports</a>
+  <a href="#supplies">Supplies</a>
+</nav>
+
+<main class="container">
+
+<!-- DASHBOARD -->
+
+<section class="stats" id="dashboard">
+
+  <div class="stat">
+    <span>Citizen Reports</span>
+    <strong id="reportCount">0</strong>
+  </div>
+
+  <div class="stat">
+    <span>Supply Records</span>
+    <strong id="supplyCount">0</strong>
+  </div>
+
+  <div class="stat">
+    <span>High Priority Reports</span>
+    <strong id="highCount">0</strong>
+  </div>
+
+  <div class="stat">
+    <span>Pending Requests</span>
+    <strong id="pendingCount">0</strong>
+  </div>
+
+</section>
+
+<!-- MAP -->
+
+<section class="card" id="mapSection">
+
+  <h2>🛰️ Satellite Map & Disaster Risk Zones</h2>
+
+  <div class="grid">
+    <button onclick="changeLayer('street')">🗺️ Street Map</button>
+    <button onclick="changeLayer('satellite')">🛰️ Satellite View</button>
+    <button onclick="getLocation()">📍 My GPS Location</button>
+    <button class="danger" onclick="displayRiskZones()">🔴 Risk Reports</button>
+  </div>
+
+  <div style="height:12px"></div>
+  <div id="map"></div>
+  <div class="result" id="mapStatus">Loading map...</div>
+
+  <p class="muted" style="font-size:12px">
+    Satellite images may not be real-time. Markers represent recorded reports,
+    not verified official disaster zones.
+  </p>
+
+</section>
+
+<!-- WEATHER -->
+
+<section class="card" id="weather">
+
+  <h2>🌦️ Weather & Flood Monitoring</h2>
+
+  <label for="weatherPlace">City or Location</label>
+  <input id="weatherPlace" value="Guwahati, Assam"
+         placeholder="Enter a city">
+
+  <button onclick="loadWeather()">Get Weather Data</button>
+
+  <div class="result" id="weatherResult">
+    Weather data has not been loaded.
+  </div>
+
+</section>
+
+<!-- LANDSLIDE -->
+
+<section class="card">
+
+  <h2>🏔️ Rainfall & Landslide Indicator</h2>
+
+  <button onclick="checkLandslide()">Analyse Forecast Rainfall</button>
+
+  <div class="result" id="landslideResult">
+    Load weather data or run the rainfall analysis.
+  </div>
+
+  <p class="notice">
+    This is a preliminary rainfall indicator, not an official landslide
+    warning or validated prediction model.
+  </p>
+
+</section>
+
+<!-- ROUTES -->
+
+<section class="card" id="routes">
+
+  <h2>🚛 Smart Route Planning</h2>
+
+  <label for="routeStart">Starting Point</label>
+  <input id="routeStart" placeholder="Starting location or GPS coordinates">
+
+  <label for="routeEnd">Destination</label>
+  <input id="routeEnd" placeholder="Enter destination">
+
+  <button onclick="findRoute()">🗺️ Find Route</button>
+  <button class="secondary" onclick="nearbySearch('rescue services')">
+    Find Rescue Services
+  </button>
+
+  <div class="result" id="routeResult"></div>
+
+</section>
+
+<!-- HOSPITAL -->
+
+<section class="card">
+
+  <h2>🏥 Hospital, Shelter & Relief Finder</h2>
+
+  <label for="finderLocation">Location</label>
+  <input id="finderLocation" placeholder="City or location">
+
+  <div class="grid">
+    <button onclick="nearbySearch('hospital')">🏥 Hospitals</button>
+    <button onclick="nearbySearch('emergency shelter')">🏠 Shelters</button>
+    <button onclick="nearbySearch('relief centre')">🆘 Relief Centres</button>
+    <button onclick="nearbySearch('food distribution centre')">🍚 Food Centres</button>
+  </div>
+
+  <div class="result" id="finderResult">
+    Choose a service to search on the map.
+  </div>
+
+</section>
+
+<!-- ACCESSIBILITY -->
+
+<section class="card">
+
+  <h2>♿ Accessibility Intelligence</h2>
+
+  <label for="accessType">Accessibility Requirement</label>
+  <select id="accessType">
+    <option value="wheelchair accessible hospital">Accessible Hospital</option>
+    <option value="wheelchair accessible shelter">Accessible Shelter</option>
+    <option value="accessible public transport">Accessible Transport</option>
+    <option value="accessible emergency services">Accessible Emergency Service</option>
+  </select>
+
+  <label for="accessLocation">Location</label>
+  <input id="accessLocation" placeholder="Enter location">
+
+  <button onclick="findAccessible()">Find Accessible Services</button>
+
+  <div class="result" id="accessResult"></div>
+
+</section>
+
+<!-- SUPPLIES -->
+
+<section class="card" id="supplies">
+
+  <h2>📦 Smart Logistics & Emergency Supplies</h2>
+
+  <label for="supplyItem">Supply Item</label>
+  <select id="supplyItem">
+    <option>Drinking Water</option>
+    <option>Food Packets</option>
+    <option>Medicines</option>
+    <option>Blankets</option>
+    <option>First Aid Kits</option>
+    <option>Rescue Equipment</option>
+  </select>
+
+  <label for="supplyQuantity">Quantity</label>
+  <input id="supplyQuantity" type="number" min="1" placeholder="Enter quantity">
+
+  <label for="supplyLocation">Storage / Distribution Location</label>
+  <input id="supplyLocation" placeholder="Enter location">
+
+  <button onclick="saveSupply()">Save Supply Record</button>
+
+  <div class="result" id="supplyResult"></div>
+  <h3>Supply Records</h3>
+  <div id="supplyList"></div>
+
+</section>
+
+<!-- SOS -->
+
+<section class="card">
+
+  <h2>🚨 Emergency Response & SOS</h2>
+
+  <p>For emergencies in India, dial 112.</p>
+
+  <button class="danger" onclick="call112()">🚨 SOS — Call 112</button>
+  <button onclick="shareLocation()">📍 Share GPS Location</button>
+
+  <div class="result" id="sosResult">
+    SOS is not automatically sent to authorities.
+  </div>
+
+</section>
+
+<!-- CITIZEN REPORTS -->
+
+<section class="card" id="reports">
+
+  <h2>📝 Citizen Disaster & Road Reports</h2>
+
+  <label for="reportType">Report Type</label>
+  <select id="reportType">
+    <option>Flooded Road</option>
+    <option>Landslide</option>
+    <option>Blocked Road</option>
+    <option>Road Damage</option>
+    <option>Bridge Damage</option>
+    <option>Medical Emergency</option>
+    <option>Food Shortage</option>
+    <option>Other Disaster</option>
+  </select>
+
+  <label for="reportLocation">Affected Location</label>
+  <input id="reportLocation" placeholder="Enter affected location">
+
+  <button class="secondary" onclick="attachReportGPS()">📍 Attach GPS</button>
+
+  <label for="reportSeverity">Severity</label>
+  <select id="reportSeverity">
+    <option>Low</option>
+    <option>Medium</option>
+    <option>High</option>
+  </select>
+
+  <label for="reportDescription">Description</label>
+  <textarea id="reportDescription" rows="3"
+            placeholder="Describe the problem"></textarea>
+
+  <button onclick="submitReport()">Submit Local Report</button>
+
+  <div class="result" id="reportResult"></div>
+
+  <h3>Recorded Reports</h3>
+  <div id="reportList"></div>
+
+</section>
+
+<!-- AI PREDICTION -->
+
+<section class="card" id="prediction">
+
+  <h2>🧠 AI Disaster Risk Assessment</h2>
+
+  <p>
+    Enter measured environmental data to calculate an illustrative risk indicator.
+  </p>
+
+  <label for="predictionType">Disaster Type</label>
+  <select id="predictionType">
+    <option value="flood">Flood</option>
+    <option value="landslide">Landslide</option>
+  </select>
+
+  <label for="predictionLocation">Location</label>
+  <input id="predictionLocation" placeholder="Enter location">
+
+  <label for="rainfall">Rainfall in last 24 hours (mm)</label>
+  <input id="rainfall" type="number" min="0" max="2000"
+         placeholder="Enter measured rainfall">
+
+  <label for="riverLevel">River Level (metres, optional)</label>
+  <input id="riverLevel" type="number" min="0"
+         placeholder="Measured river level">
+
+  <label for="soilMoisture">Soil Moisture (%) (optional)</label>
+  <input id="soilMoisture" type="number" min="0" max="100"
+         placeholder="0 to 100">
+
+  <label for="slopeAngle">Slope Angle (degrees, optional)</label>
+  <input id="slopeAngle" type="number" min="0" max="90"
+         placeholder="0 to 90">
+
+  <button onclick="assessRisk()">Assess Risk</button>
+
+  <div class="result" id="predictionResult">
+    No risk assessment has been run.
+  </div>
+
+  <p class="notice">
+    This standalone version uses transparent example rules. It does not
+    contain a trained AI model. Actual prediction requires a validated
+    model, relevant disaster datasets and real environmental measurements.
+  </p>
+
+</section>
+
+<!-- GOVERNMENT DASHBOARD -->
+
+<section class="card" id="government">
+
+  <h2>🏛️ Government Command Dashboard</h2>
+
+  <p>
+    Operational overview of locally recorded reports, supplies and emergency requests.
+  </p>
+
+  <div class="stats">
+
+    <div class="stat">
+      <span>Total Reports</span>
+      <strong id="govReports">0</strong>
+    </div>
+
+    <div class="stat">
+      <span>High Priority</span>
+      <strong id="govHigh">0</strong>
+    </div>
+
+    <div class="stat">
+      <span>Pending Requests</span>
+      <strong id="govPending">0</strong>
+    </div>
+
+    <div class="stat">
+      <span>Approved Requests</span>
+      <strong id="govApproved">0</strong>
+    </div>
+
+  </div>
+
+  <button onclick="refreshAll()">🔄 Refresh Dashboard</button>
+
+  <h3>Disaster Overview</h3>
+  <div class="result" id="govOverview"></div>
+
+  <h3>Supply Overview</h3>
+  <div id="govSupplies"></div>
+
+  <p class="notice">
+    This is a local frontend dashboard, not an official government system.
+    Multiple users cannot see shared data until a secure backend and shared
+    database are connected. Protect the dashboard with authentication
+    before using sensitive information.
+  </p>
+
+</section>
+
+<!-- EMERGENCY DISPATCH -->
+
+<section class="card" id="dispatch">
+
+  <h2>🚨 Emergency Dispatch Management</h2>
+
+  <label for="dispatchType">Emergency Type</label>
+  <select id="dispatchType">
+    <option>Medical Emergency</option>
+    <option>Flood Rescue</option>
+    <option>Landslide Rescue</option>
+    <option>Food and Water Supply</option>
+    <option>Evacuation</option>
+    <option>Other Emergency</option>
+  </select>
+
+  <label for="dispatchLocation">Emergency Location</label>
+  <input id="dispatchLocation" placeholder="Enter emergency location">
+
+  <label for="dispatchPriority">Priority</label>
+  <select id="dispatchPriority">
+    <option>High</option>
+    <option>Medium</option>
+    <option>Low</option>
+  </select>
+
+  <label for="dispatchTeam">Response Team</label>
+  <select id="dispatchTeam">
+    <option>Medical Team</option>
+    <option>Rescue Team</option>
+    <option>Flood Rescue Team</option>
+    <option>Relief Supply Team</option>
+    <option>Evacuation Team</option>
+  </select>
+
+  <label for="dispatchDetails">Emergency Details</label>
+  <textarea id="dispatchDetails" rows="3"
+            placeholder="Describe the emergency"></textarea>
+
+  <button class="danger" onclick="createDispatch()">
+    Create Emergency Request
+  </button>
+
+  <div class="result" id="dispatchResult"></div>
+
+  <h3>Emergency Request Queue</h3>
+  <div id="dispatchList"></div>
+
+  <p class="notice">
+    Requests are stored locally. Approve, Reject and Mark Dispatched only
+    update local records. They do not contact a real ambulance, rescue team
+    or government agency. Real dispatch requires an authorized service
+    integration and authenticated backend.
+  </p>
+
+</section>
+
+<!-- ANALYTICS -->
+
+<section class="card">
+
+  <h2>📊 Project Analytics</h2>
+
+  <div id="analytics" class="result"></div>
+
+  <button class="secondary" onclick="refreshAll()">Refresh Analytics</button>
+
+</section>
+
+<!-- ASSISTANT -->
+
+<section class="card">
+
+  <h2>🤖 Emergency Safety Assistant</h2>
+
+  <label for="question">Ask a Question</label>
+  <input id="question" placeholder="Example: What should I do during a flood?">
+
+  <button onclick="askAssistant()">Get Safety Guidance</button>
+
+  <div class="result" id="assistantResult"></div>
+
+</section>
+
+<section class="card">
+
+  <h2>ℹ️ System Information</h2>
+
+  <div class="result">
+    <strong>Project:</strong> NER-SmartLink-AI<br>
+    <strong>Map:</strong> Leaflet and external map tiles<br>
+    <strong>Weather:</strong> Open-Meteo public API<br>
+    <strong>Storage:</strong> Browser local storage<br>
+    <strong>AI:</strong> Rule-based risk indicator in this frontend<br>
+    <strong>Dispatch:</strong> Local request workflow only<br>
+    <strong>Emergency number in India:</strong> 112
+  </div>
+
+</section>
+
+</main>
+
+<footer>
+  NER-SmartLink-AI<br>
+  Smart Disaster Management, Logistics and Accessibility
+</footer>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+"use strict";
+
+/* STORAGE */
+
+const RK = "ner_smartlink_reports_v2";
+const SK = "ner_smartlink_supplies_v2";
+const DK = "ner_smartlink_dispatch_v2";
+
+let map;
+let streetLayer;
+let satelliteLayer;
+let reportLayer;
+let gps = null;
+let reportGPS = null;
+let weatherData = null;
+
+function readData(key) {
+  try {
+    const value = JSON.parse(localStorage.getItem(key) || "[]");
+    return Array.isArray(value) ? value : [];
+  } catch(e) {
+    return [];
+  }
+}
+
+function saveData(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+    return true;
+  } catch(e) {
+    alert("Could not save data. Check browser storage.");
+    return false;
+  }
+}
+
+function esc(value) {
+  return String(value ?? "").replace(/[&<>"']/g, c => ({
+    "&":"&amp;",
+    "<":"&lt;",
+    ">":"&gt;",
+    '"':"&quot;",
+    "'":"&#39;"
+  })[c]);
+}
+
+/* MAP */
+
+function initMap() {
+  if (typeof L === "undefined") {
+    document.getElementById("mapStatus").textContent =
+      "Map library failed to load. Check your internet connection.";
+    return;
+  }
+
+  map = L.map("map").setView([26.1445,91.7362],6);
+
+  streetLayer = L.tileLayer(
+    "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    {
+      maxZoom:19,
+      attribution:"© OpenStreetMap contributors"
+    }
+  );
+
+  satelliteLayer = L.tileLayer(
+    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    {
+      maxZoom:19,
+      attribution:"Tiles © Esri and imagery contributors"
+    }
+  );
+
+  streetLayer.addTo(map);
+  reportLayer = L.layerGroup().addTo(map);
+
+  document.getElementById("mapStatus").textContent =
+    "Map loaded. Choose a map layer or obtain your GPS location.";
+
+  displayRiskZones();
+
+  setTimeout(() => map.invalidateSize(),500);
+}
+
+function changeLayer(type) {
+  if (!map) {
+    alert("Map is not available. Check your internet connection.");
+    return;
+  }
+
+  if (type === "satellite") {
+    if (map.hasLayer(streetLayer)) map.removeLayer(streetLayer);
+    satelliteLayer.addTo(map);
+
+    document.getElementById("mapStatus").textContent =
+      "Satellite imagery selected. Images may not be real-time.";
+  } else {
+    if (map.hasLayer(satelliteLayer)) map.removeLayer(satelliteLayer);
+    streetLayer.addTo(map);
+
+    document.getElementById("mapStatus").textContent =
+      "Street map selected.";
+  }
+
+  setTimeout(() => map.invalidateSize(),150);
+}
+
+/* GPS */
+
+function getPosition() {
+  return new Promise((resolve,reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error("Geolocation is not supported."));
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      p => resolve({
+        lat:p.coords.latitude,
+        lon:p.coords.longitude,
+        accuracy:p.coords.accuracy
+      }),
+      reject,
+      {
+        enableHighAccuracy:true,
+        timeout:20000,
+        maximumAge:30000
+      }
+    );
+  });
+}
+
+async function getLocation() {
+  const output = document.getElementById("mapStatus");
+  output.textContent = "Requesting GPS permission...";
+
+  try {
+    gps = await getPosition();
+
+    if (map) {
+      map.setView([gps.lat,gps.lon],15);
+
+      L.marker([gps.lat,gps.lon])
+        .addTo(map)
+        .bindPopup("Your GPS location")
+        .openPopup();
+    }
+
+    const coords = gps.lat.toFixed(6) + ", " + gps.lon.toFixed(6);
+
+    document.getElementById("routeStart").value = coords;
+    document.getElementById("finderLocation").value = coords;
+    document.getElementById("accessLocation").value = coords;
+    document.getElementById("reportLocation").value = coords;
+    document.getElementById("dispatchLocation").value = coords;
+    document.getElementById("predictionLocation").value = coords;
+
+    output.textContent =
+      "GPS acquired. Accuracy approximately " +
+      Math.round(gps.accuracy) + " metres.";
+
+  } catch(e) {
+    output.textContent =
+      "Location unavailable. Allow location permission and enable GPS.";
+  }
+}
+
+async function attachReportGPS() {
+  try {
+    reportGPS = await getPosition();
+
+    document.getElementById("reportLocation").value =
+      reportGPS.lat.toFixed(6) + ", " + reportGPS.lon.toFixed(6);
+
+    document.getElementById("reportResult").textContent =
+      "GPS attached to the next report.";
+
+  } catch(e) {
+    document.getElementById("reportResult").textContent =
+      "GPS unavailable. Check location permission.";
+  }
+}
+
+/* MAP RISK MARKERS */
+
+function displayRiskZones() {
+  if (!map || !reportLayer) return;
+
+  reportLayer.clearLayers();
+
+  const reports = readData(RK);
+  let markers = 0;
+
+  reports.forEach(r => {
+    if (typeof r.lat !== "number" || typeof r.lon !== "number") return;
+
+    const colour = r.severity === "High" ? "#dc2626" :
+                   r.severity === "Medium" ? "#f59e0b" : "#16a34a";
+
+    L.circleMarker([r.lat,r.lon], {
+      radius:r.severity === "High" ? 10 : 7,
+      color:colour,
+      fillColor:colour,
+      fillOpacity:.75
+    }).addTo(reportLayer).bindPopup(
+      "<b>" + esc(r.type) + "</b><br>" +
+      "Severity: " + esc(r.severity) + "<br>" +
+      "Location: " + esc(r.location) + "<br>" +
+      esc(r.description || "") +
+      "<br><small>Unverified citizen report</small>"
+    );
+
+    markers++;
+  });
+
+  document.getElementById("mapStatus").textContent =
+    markers
+      ? markers + " GPS-tagged citizen report markers displayed."
+      : "No GPS-tagged reports yet. Attach GPS when submitting a report.";
+}
+
+/* WEATHER */
+
+async function geocode(place) {
+  const url =
+    "https://geocoding-api.open-meteo.com/v1/search?name=" +
+    encodeURIComponent(place) + "&count=1&language=en&format=json";
+
+  const response = await fetch(url);
+  if (!response.ok) throw new Error("Location lookup failed.");
+
+  const data = await response.json();
+
+  if (!data.results || !data.results.length) {
+    throw new Error("Location not found.");
+  }
+
+  return data.results[0];
+}
+
+async function forecast(lat,lon) {
+  const url =
+    "https://api.open-meteo.com/v1/forecast" +
+    "?latitude=" + lat +
+    "&longitude=" + lon +
+    "&current=temperature_2m,relative_humidity_2m,precipitation,rain,wind_speed_10m" +
+    "&hourly=precipitation,precipitation_probability" +
+    "&forecast_days=2&timezone=auto";
+
+  const response = await fetch(url);
+  if (!response.ok) throw new Error("Weather service unavailable.");
+
+  return response.json();
+}
+
+function next12Rain(hourly) {
+  if (!hourly || !hourly.precipitation) return null;
+
+  const now = Date.now();
+  let start = hourly.time.findIndex(t => new Date(t).getTime() >= now);
+
+  if (start < 0) start = 0;
+
+  return hourly.precipitation
+    .slice(start,start + 12)
+    .reduce((sum,v) => sum + Number(v || 0),0);
+}
+
+async function loadWeather() {
+  const output = document.getElementById("weatherResult");
+  const place = document.getElementById("weatherPlace").value.trim();
+
+  if (!place) {
+    output.textContent = "Enter a location.";
+    return;
+  }
+
+  output.textContent = "Fetching online weather data...";
+
+  try {
+    const location = await geocode(place);
+    const data = await forecast(location.latitude,location.longitude);
+
+    weatherData = {
+      location:location,
+      data:data
+    };
+
+    const c = data.current;
+    const rain = next12Rain(data.hourly);
+
+    output.innerHTML =
+      "<b>" + esc(location.name) + "</b><br>" +
+      "Temperature: " + c.temperature_2m + " °C<br>" +
+      "Humidity: " + c.relative_humidity_2m + "%<br>" +
+      "Current precipitation: " + c.precipitation + " mm<br>" +
+      "Wind speed: " + c.wind_speed_10m + " km/h<br>" +
+      "Forecast rainfall next 12 hours: " +
+      (rain === null ? "Unavailable" : rain.toFixed(1) + " mm") +
+      "<br>Data time: " + esc(c.time) +
+      "<br><small>Informational forecast, not an official warning.</small>";
+
+    document.getElementById("predictionLocation").value = location.name;
+
+    if (map) map.setView([location.latitude,location.longitude],9);
+
+  } catch(e) {
+    output.textContent = e.message || "Weather request failed.";
+  }
+}
+
+async function checkLandslide() {
+  const output = document.getElementById("landslideResult");
+  output.textContent = "Checking forecast rainfall...";
+
+  try {
+    let location;
+
+    if (gps) {
+      location = {
+        latitude:gps.lat,
+        longitude:gps.lon,
+        name:"Current GPS location"
+      };
+    } else {
+      location = await geocode(
+        document.getElementById("weatherPlace").value.trim()
+      );
+    }
+
+    const data = await forecast(location.latitude,location.longitude);
+    const rain = next12Rain(data.hourly);
+
+    if (rain === null) throw new Error("Rainfall data unavailable.");
+
+    const level = rain >= 50 ? "HIGH RAINFALL INDICATOR" :
+                  rain >= 20 ? "MODERATE RAINFALL INDICATOR" :
+                  "LOWER RAINFALL INDICATOR";
+
+    const cls = rain >= 50 ? "high" : rain >= 20 ? "medium" : "low";
+
+    output.innerHTML =
+      "<span class='badge " + cls + "'>" + level + "</span><br><br>" +
+      "Location: " + esc(location.name) + "<br>" +
+      "Next 12-hour forecast rainfall: " + rain.toFixed(1) + " mm<br><br>" +
+      "Check official alerts and avoid dangerous slopes. Low forecast rainfall " +
+      "does not rule out a landslide.<br>" +
+      "<small>This is not a validated landslide prediction model.</small>";
+
+  } catch(e) {
+    output.textContent = e.message || "Could not analyse rainfall.";
+  }
+}
+
+/* ROUTES & SEARCH */
+
+function findRoute() {
+  const start = document.getElementById("routeStart").value.trim();
+  const end = document.getElementById("routeEnd").value.trim();
+
+  if (!end) {
+    document.getElementById("routeResult").textContent =
+      "Enter a destination.";
+    return;
+  }
+
+  const url = new URL("https://www.google.com/maps/dir/");
+  url.searchParams.set("api","1");
+  url.searchParams.set("destination",end);
+  url.searchParams.set("travelmode","driving");
+
+  if (start) url.searchParams.set("origin",start);
+
+  document.getElementById("routeResult").textContent =
+    "Opening route directions. Check official road closures before travelling.";
+
+  window.open(url.toString(),"_blank");
+}
+
+function nearbySearch(type) {
+  const location =
+    document.getElementById("finderLocation").value.trim();
+
+  const query = location ? type + " near " + location : type + " near me";
+
+  document.getElementById("finderResult").textContent =
+    "Opening map search. Confirm availability with the service provider.";
+
+  window.open(
+    "https://www.google.com/maps/search/" + encodeURIComponent(query),
+    "_blank"
+  );
+}
+
+function findAccessible() {
+  const type = document.getElementById("accessType").value;
+  const location = document.getElementById("accessLocation").value.trim();
+
+  const query = location ? type + " near " + location : type + " near me";
+
+  document.getElementById("accessResult").textContent =
+    "Opening map search. Confirm accessibility directly with the provider.";
+
+  window.open(
+    "https://www.google.com/maps/search/" + encodeURIComponent(query),
+    "_blank"
+  );
+}
+
+/* SUPPLIES */
+
+function saveSupply() {
+  const item = document.getElementById("supplyItem").value;
+  const quantity = Number(document.getElementById("supplyQuantity").value);
+  const location = document.getElementById("supplyLocation").value.trim();
+
+  if (!Number.isFinite(quantity) || quantity <= 0) {
+    alert("Enter a valid quantity.");
+    return;
+  }
+
+  if (!location) {
+    alert("Enter the supply location.");
+    return;
+  }
+
+  const supplies = readData(SK);
+
+  supplies.unshift({
+    id:Date.now(),
+    item:item,
+    quantity:quantity,
+    location:location,
+    createdAt:new Date().toISOString()
+  });
+
+  if (!saveData(SK,supplies)) return;
+
+  document.getElementById("supplyQuantity").value = "";
+  document.getElementById("supplyLocation").value = "";
+  document.getElementById("supplyResult").textContent =
+    "Supply record saved on this device.";
+
+  refreshAll();
+}
+
+/* CITIZEN REPORTS */
+
+function submitReport() {
+  const location = document.getElementById("reportLocation").value.trim();
+  const description = document.getElementById("reportDescription").value.trim();
+
+  if (!location) {
+    alert("Enter an affected location.");
+    return;
+  }
+
+  const reports = readData(RK);
+
+  reports.unshift({
+    id:Date.now(),
+    type:document.getElementById("reportType").value,
+    location:location,
+    severity:document.getElementById("reportSeverity").value,
+    description:description,
+    createdAt:new Date().toISOString(),
+    lat:reportGPS ? reportGPS.lat : null,
+    lon:reportGPS ? reportGPS.lon : null
+  });
+
+  if (!saveData(RK,reports)) return;
+
+  reportGPS = null;
+
+  document.getElementById("reportDescription").value = "";
+  document.getElementById("reportResult").textContent =
+    "Report saved locally. It has NOT been sent to authorities.";
+
+  refreshAll();
+}
+
+/* SOS */
+
+function call112() {
+  if (confirm("Open the phone dialer to call India's emergency number 112?")) {
+    document.getElementById("sosResult").textContent =
+      "Opening phone dialer. Confirm the call on your device.";
+
+    window.location.href = "tel:112";
+  }
+}
+
+async function shareLocation() {
+  const output = document.getElementById("sosResult");
+  output.textContent = "Getting GPS location...";
+
+  try {
+    const p = await getPosition();
+    const link = "https://www.google.com/maps?q=" + p.lat + "," + p.lon;
+    const message = "I may need assistance. My location: " + link;
+
+    output.textContent =
+      "Opening WhatsApp share. Choose a recipient and send the message yourself.";
+
+    window.open("https://wa.me/?text=" + encodeURIComponent(message),"_blank");
+
+  } catch(e) {
+    output.textContent = "Could not obtain GPS location.";
+  }
+}
+
+/* RISK ASSESSMENT */
+
+function assessRisk() {
+  const type = document.getElementById("predictionType").value;
+  const location = document.getElementById("predictionLocation").value.trim();
+  const rainfallText = document.getElementById("rainfall").value;
+  const riverText = document.getElementById("riverLevel").value;
+  const soilText = document.getElementById("soilMoisture").value;
+  const slopeText = document.getElementById("slopeAngle").value;
+
+  const output = document.getElementById("predictionResult");
+
+  if (!location || rainfallText.trim() === "") {
+    output.textContent = "Enter a location and measured rainfall.";
+    return;
+  }
+
+  const rain = Number(rainfallText);
+  const river = riverText.trim() === "" ? null : Number(riverText);
+  const soil = soilText.trim() === "" ? null : Number(soilText);
+  const slope = slopeText.trim() === "" ? null : Number(slopeText);
+
+  if (!Number.isFinite(rain) || rain < 0 || rain > 2000) {
+    output.textContent = "Rainfall must be between 0 and 2000 mm.";
+    return;
+  }
+
+  if (river !== null && (!Number.isFinite(river) || river < 0)) {
+    output.textContent = "Enter a valid river level.";
+    return;
+  }
+
+  if (soil !== null &&
+      (!Number.isFinite(soil) || soil < 0 || soil > 100)) {
+    output.textContent = "Soil moisture must be between 0 and 100%.";
+    return;
+  }
+
+  if (slope !== null &&
+      (!Number.isFinite(slope) || slope < 0 || slope > 90)) {
+    output.textContent = "Slope angle must be between 0 and 90 degrees.";
+    return;
+  }
+
+  let score = 0;
+  const factors = [];
+
+  if (rain >= 100) {
+    score += 3;
+    factors.push("High rainfall input");
+  } else if (rain >= 50) {
+    score += 2;
+    factors.push("Elevated rainfall input");
+  } else if (rain >= 20) {
+    score += 1;
+    factors.push("Moderate rainfall input");
+  }
+
+  if (type === "landslide") {
+    if (soil !== null && soil >= 80) {
+      score += 1;
+      factors.push("High entered soil moisture");
+    }
+
+    if (slope !== null && slope >= 30) {
+      score += 1;
+      factors.push("Steep entered slope");
+    }
+  }
+
+  let level;
+  let cls;
+
+  if (score >= 4) {
+    level = "HIGH INDICATOR";
+    cls = "high";
+  } else if (score >= 2) {
+    level = "MODERATE INDICATOR";
+    cls = "medium";
+  } else {
+    level = "LOWER INDICATOR";
+    cls = "low";
+  }
+
+  output.innerHTML =
+    "<span class='badge " + cls + "'>" + level + "</span><br><br>" +
+    "Location: " + esc(location) + "<br>" +
+    "Disaster type: " + esc(type) + "<br>" +
+    "Entered rainfall: " + rain + " mm<br>" +
+    "Illustrative score: " + score + "<br>" +
+    "River level entered: " + (river === null ? "Not provided" : river + " m") +
+    "<br><br>Factors:<br>" +
+    (factors.length ? factors.map(esc).join("<br>") : "No elevated factors in the entered values.") +
+    "<br><br><b>Important:</b> This is a rule-based indicator, not a trained AI prediction or official warning.";
+
+}
+
+/* EMERGENCY DISPATCH REQUESTS */
+
+function getDispatches() {
+  return readData(DK);
+}
+
+function createDispatch() {
+  const location = document.getElementById("dispatchLocation").value.trim();
+  const details = document.getElementById("dispatchDetails").value.trim();
+
+  if (!location || !details) {
+    alert("Enter the emergency location and details.");
+    return;
+  }
+
+  const requests = getDispatches();
+
+  requests.unshift({
+    id:"NER-" + Date.now(),
+    type:document.getElementById("dispatchType").value,
+    location:location,
+    priority:document.getElementById("dispatchPriority").value,
+    team:document.getElementById("dispatchTeam").value,
+    details:details,
+    status:"Pending Review",
+    createdAt:new Date().toISOString(),
+    approvedAt:null,
+    dispatchedAt:null
+  });
+
+  if (!saveData(DK,requests)) return;
+
+  document.getElementById("dispatchLocation").value = "";
+  document.getElementById("dispatchDetails").value = "";
+
+  document.getElementById("dispatchResult").textContent =
+    "Request recorded locally as Pending Review. No response team was contacted.";
+
+  refreshAll();
+}
+
+function approveDispatch(id) {
+  const requests = getDispatches();
+  const request = requests.find(r => r.id === id);
+
+  if (!request || request.status !== "Pending Review") {
+    alert("Request is not pending.");
+    return;
+  }
+
+  if (!confirm("Approve this request in the local interface? No real service will be contacted.")) {
+    return;
+  }
+
+  request.status = "Approved";
+  request.approvedAt = new Date().toISOString();
+
+  if (saveData(DK,requests)) refreshAll();
+}
+
+function rejectDispatch(id) {
+  const requests = getDispatches();
+  const request = requests.find(r => r.id === id);
+
+  if (!request || request.status !== "Pending Review") return;
+
+  if (!confirm("Reject this local request?")) return;
+
+  request.status = "Rejected";
+
+  if (saveData(DK,requests)) refreshAll();
+}
+
+function markDispatched(id) {
+  const requests = getDispatches();
+  const request = requests.find(r => r.id === id);
+
+  if (!request || request.status !== "Approved") return;
+
+  alert(
+    "This only changes the local status. It does not contact an ambulance, rescue team or government service."
+  );
+
+  if (!confirm("Mark this request as dispatched in the local interface?")) return;
+
+  request.status = "Dispatched";
+  request.dispatchedAt = new Date().toISOString();
+
+  if (saveData(DK,requests)) refreshAll();
+}
+
+function renderDispatches() {
+  const requests = getDispatches();
+
+  document.getElementById("dispatchList").innerHTML =
+    requests.length ? requests.map(r => {
+      let actions = "";
+
+      if (r.status === "Pending Review") {
+        actions =
+          '<button class="success" onclick="approveDispatch(' +
+          JSON.stringify(r.id) + ')">Approve</button>' +
+          '<button class="secondary" onclick="rejectDispatch(' +
+          JSON.stringify(r.id) + ')">Reject</button>';
+      } else if (r.status === "Approved") {
+        actions =
+          '<button onclick="markDispatched(' +
+          JSON.stringify(r.id) + ')">Mark Dispatched</button>';
+      }
+
+      return '<div class="item">' +
+        '<b>' + esc(r.id) + '</b><br>' +
+        'Type: ' + esc(r.type) + '<br>' +
+        'Priority: ' + esc(r.priority) + '<br>' +
+        'Location: ' + esc(r.location) + '<br>' +
+        'Team: ' + esc(r.team) + '<br>' +
+        'Details: ' + esc(r.details) + '<br>' +
+        'Status: <b>' + esc(r.status) + '</b><br>' +
+        'Created: ' + esc(r.createdAt) + '<br>' +
+        actions +
+        '<br><small>Local workflow only; not an actual dispatch.</small>' +
+        '</div>';
+    }).join("") : "<p>No dispatch requests yet.</p>";
+}
+
+/* GOVERNMENT DASHBOARD AND ANALYTICS */
+
+function refreshAll() {
+  const reports = readData(RK);
+  const supplies = readData(SK);
+  const dispatches = getDispatches();
+
+  const high = reports.filter(r => r.severity === "High").length;
+  const pending = dispatches.filter(r => r.status === "Pending Review").length;
+  const approved = dispatches.filter(r => r.status === "Approved").length;
+  const dispatched = dispatches.filter(r => r.status === "Dispatched").length;
+
+  document.getElementById("reportCount").textContent = reports.length;
+  document.getElementById("supplyCount").textContent = supplies.length;
+  document.getElementById("highCount").textContent = high;
+  document.getElementById("pendingCount").textContent = pending;
+
+  document.getElementById("govReports").textContent = reports.length;
+  document.getElementById("govHigh").textContent = high;
+  document.getElementById("govPending").textContent = pending;
+  document.getElementById("govApproved").textContent = approved;
+
+  document.getElementById("govOverview").innerHTML =
+    "Total citizen reports: " + reports.length + "<br>" +
+    "High priority reports: " + high + "<br>" +
+    "Medium priority reports: " +
+    reports.filter(r => r.severity === "Medium").length + "<br>" +
+    "Low priority reports: " +
+    reports.filter(r => r.severity === "Low").length + "<br>" +
+    "Supply records: " + supplies.length + "<br>" +
+    "Pending dispatch requests: " + pending + "<br>" +
+    "Approved requests: " + approved + "<br>" +
+    "Marked dispatched: " + dispatched +
+    "<br><small>Data is from this browser only.</small>";
+
+  document.getElementById("reportList").innerHTML =
+    reports.length ? reports.slice(0,30).map(r =>
+      '<div class="item"><b>' + esc(r.type) + '</b> ' +
+      '<span class="badge ' +
+      (r.severity === "High" ? "high" :
+       r.severity === "Medium" ? "medium" : "low") +
+      '">' + esc(r.severity) + '</span><br>' +
+      'Location: ' + esc(r.location) + '<br>' +
+      'Description: ' + esc(r.description || "Not provided") + '<br>' +
+      'Time: ' + esc(r.createdAt) + '</div>'
+    ).join("") : "<p>No reports recorded.</p>";
+
+  document.getElementById("supplyList").innerHTML =
+    supplies.length ? supplies.slice(0,30).map(s =>
+      '<div class="item"><b>' + esc(s.item) + '</b><br>' +
+      'Quantity: ' + esc(s.quantity) + '<br>' +
+      'Location: ' + esc(s.location) + '<br>' +
+      'Recorded: ' + esc(s.createdAt) + '</div>'
+    ).join("") : "<p>No supply records.</p>";
+
+  document.getElementById("govSupplies").innerHTML =
+    supplies.length ? supplies.map(s =>
+      '<div class="item">' + esc(s.item) +
+      ' — Quantity: ' + esc(s.quantity) +
+      ' — Location: ' + esc(s.location) + '</div>'
+    ).join("") : "<p>No supply records available.</p>";
+
+  document.getElementById("analytics").innerHTML =
+    "<b>Total reports:</b> " + reports.length + "<br>" +
+    "<b>High severity:</b> " + high + "<br>" +
+    "<b>Supply records:</b> " + supplies.length + "<br>" +
+    "<b>Pending requests:</b> " + pending + "<br>" +
+    "<b>Approved requests:</b> " + approved + "<br>" +
+    "<b>Marked dispatched:</b> " + dispatched;
+
+  renderDispatches();
+  displayRiskZones();
+}
+
+/* EMERGENCY ASSISTANT */
+
+function askAssistant() {
+  const q = document.getElementById("question").value.trim().toLowerCase();
+  const output = document.getElementById("assistantResult");
+
+  if (!q) {
+    output.textContent = "Enter a question.";
+    return;
+  }
+
+  let answer =
+    "For immediate danger, call 112 in India. Follow official disaster advisories and avoid unsafe areas.";
+
+  if (q.includes("flood") || q.includes("water")) {
+    answer =
+      "FLOOD SAFETY: Move to higher ground if safe. Never walk or drive through floodwater. Stay away from electrical equipment and follow official evacuation instructions.";
+  } else if (q.includes("landslide") || q.includes("slope")) {
+    answer =
+      "LANDSLIDE SAFETY: Move away from slopes and debris paths if safe. Watch for ground cracks and unusual sounds. Do not cross a landslide area.";
+  } else if (q.includes("earthquake")) {
+    answer =
+      "EARTHQUAKE SAFETY: Drop, Cover and Hold On during shaking. Stay away from windows. Follow official instructions after the shaking stops.";
+  } else if (q.includes("hospital") || q.includes("injury") || q.includes("medical")) {
+    answer =
+      "MEDICAL EMERGENCY: Call 112 in India when immediate help is required. Use the hospital search to find nearby facilities. Confirm availability directly.";
+  } else if (q.includes("food") || q.includes("supply")) {
+    answer =
+      "SUPPLY SUPPORT: Find a verified relief distribution centre. Use Supply Management to record available resources. Do not assume a listed centre is open without confirmation.";
+  } else if (q.includes("road") || q.includes("route")) {
+    answer =
+      "ROAD SAFETY: Check official road closure notices. Avoid flooded roads, damaged bridges and reported landslide areas. A map route does not guarantee a road is safe.";
+  }
+
+  output.textContent = answer;
+}
+
+/* START */
+
+document.addEventListener("DOMContentLoaded",function() {
+  initMap();
+  refreshAll();
+});
+</script>
+
+</body>
+</html>
