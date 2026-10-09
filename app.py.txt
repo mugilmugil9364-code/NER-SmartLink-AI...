@@ -1,0 +1,242 @@
+from flask import Flask, request, jsonify, send_from_directory
+import sqlite3
+import os
+from pathlib import Path
+from datetime import datetime, timezone
+
+app = Flask(__name__)
+
+BASE_DIR = Path(__file__).resolve().parent
+DB_PATH = BASE_DIR / "ner_smartlink.db"
+
+
+# Database connection
+def get_db():
+    return sqlite3.connect(DB_PATH)
+
+
+# Create database
+def init_db():
+    with get_db() as db:
+        db.execute("""
+            CREATE TABLE IF NOT EXISTS reports (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                report_type TEXT NOT NULL,
+                description TEXT NOT NULL,
+                latitude REAL NOT NULL,
+                longitude REAL NOT NULL,
+                priority TEXT NOT NULL,
+                status TEXT NOT NULL DEFAULT 'PENDING',
+                created_at TEXT NOT NULL
+            )
+        """)
+
+
+# Priority classification
+def classify_priority(report_type, description):
+    text = (report_type + " " + description).lower()
+
+    if any(word in text for word in [
+        "trapped", "rescue needed", "life threat",
+        "people missing", "building collapse"
+    ]):
+        return "CRITICAL"
+
+    if any(word in text for word in [
+        "flood", "landslide", "heavy rain",
+        "road blocked", "bridge damaged"
+    ]):
+        return "HIGH"
+
+    if any(word in text for word in [
+        "pothole", "street light", "signal problem"
+    ]):
+        return "MEDIUM"
+
+    return "LOW"
+
+
+# Home page
+@app.route("/")
+def home():
+    return send_from_directory(BASE_DIR, "index.html")
+
+
+# Health check
+@app.route("/api/health")
+def health():
+    return jsonify({
+        "project": "NER-SmartLink-AI",
+        "status": "online",
+        "backend": "Flask",
+        "time": datetime.now(timezone.utc).isoformat()
+    })
+
+
+# Citizen reports API
+@app.route("/api/reports", methods=["GET", "POST"])
+def reports():
+
+    if request.method == "POST":
+
+        data = request.get_json(silent=True)
+
+        if not isinstance(data, dict):
+            return jsonify({
+                "error": "Send report data as JSON"
+            }), 400
+
+        report_type = str(
+            data.get("report_type", "")
+        ).strip()
+
+        description = str(
+            data.get("description", "")
+        ).strip()
+
+        try:
+            latitude = float(data["latitude"])
+            longitude = float(data["longitude"])
+
+            if not (
+                -90 <= latitude <= 90
+                and -180 <= longitude <= 180
+            ):
+                raise ValueError
+
+        except (KeyError, TypeError, ValueError):
+            return jsonify({
+                "error": "Valid GPS coordinates required"
+            }), 400
+
+        if not report_type or not description:
+            return jsonify({
+                "error": "Report type and description required"
+            }), 400
+
+        priority = classify_priority(
+            report_type, description
+        )
+
+        created_at = datetime.now(
+            timezone.utc
+        ).isoformat()
+
+        with get_db() as db:
+            cursor = db.execute("""
+                INSERT INTO reports (
+                    report_type,
+                    description,
+                    latitude,
+                    longitude,
+                    priority,
+                    status,
+                    created_at
+                )
+                VALUES (?, ?, ?, ?, ?, 'PENDING', ?)
+            """, (
+                report_type,
+                description,
+                latitude,
+                longitude,
+                priority,
+                created_at
+            ))
+
+            report_id = cursor.lastrowid
+
+        return jsonify({
+            "success": True,
+            "message": "Report saved successfully",
+            "report": {
+                "id": report_id,
+                "report_type": report_type,
+                "description": description,
+                "latitude": latitude,
+                "longitude": longitude,
+                "priority": priority,
+                "status": "PENDING",
+                "created_at": created_at
+            }
+        }), 201
+
+    with get_db() as db:
+        db.row_factory = sqlite3.Row
+
+        rows = db.execute("""
+            SELECT * FROM reports
+            ORDER BY id DESC
+        """).fetchall()
+
+    return jsonify([dict(row) for row in rows])
+
+
+# Government dashboard API
+@app.route("/api/dashboard")
+def dashboard():
+
+    with get_db() as db:
+
+        total = db.execute(
+            "SELECT COUNT(*) FROM reports"
+        ).fetchone()[0]
+
+        high = db.execute("""
+            SELECT COUNT(*) FROM reports
+            WHERE priority IN ('HIGH', 'CRITICAL')
+        """).fetchone()[0]
+
+        pending = db.execute("""
+            SELECT COUNT(*) FROM reports
+            WHERE status = 'PENDING'
+        """).fetchone()[0]
+
+    return jsonify({
+        "total_reports": total,
+        "high_priority_reports": high,
+        "pending_reports": pending
+    })
+
+
+# Update report status
+@app.route("/api/reports/<int:report_id>/status",
+           methods=["POST"])
+def update_report_status(report_id):
+
+    data = request.get_json(silent=True) or {}
+    status = str(data.get("status", "")).upper()
+
+    allowed_statuses = {
+        "PENDING", "IN_PROGRESS", "RESOLVED"
+    }
+
+    if status not in allowed_statuses:
+        return jsonify({
+            "error": "Invalid report status"
+        }), 400
+
+    with get_db() as db:
+        cursor = db.execute("""
+            UPDATE reports
+            SET status = ?
+            WHERE id = ?
+        """, (status, report_id))
+
+        if cursor.rowcount == 0:
+            return jsonify({
+                "error": "Report not found"
+            }), 404
+
+    return jsonify({
+        "success": True,
+        "id": report_id,
+        "status": status
+    })
+
+
+# Start application
+init_db()
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
